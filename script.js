@@ -12,6 +12,8 @@ let previousValue;
 const keyOperators = document.querySelector(".operators");
 const operators = ["+", "-", "*", "÷", ".", "="];
 let isNegative = false;
+const audio = new Audio("sound/sfx.mp3");
+audio.volume = 0.1;
 
 // create number keys
 // -1 is clear and -2 is delete
@@ -42,6 +44,7 @@ for (let i in operators) {
 
 // add event listeners to number keys
 keyNumbers.addEventListener("click", (e) => {
+  audio.play();
   if (
     (previousValue === undefined &&
       input.value === "0" &&
@@ -75,6 +78,7 @@ keyNumbers.addEventListener("click", (e) => {
 });
 
 keyOperators.addEventListener("click", (e) => {
+  audio.play();
   const value = input.value;
   const lastChar = value[value.length - 1];
 
