@@ -144,7 +144,7 @@ keyOperators.addEventListener("click", (e) => {
     if (result === "Error") {
       input.value = result;
     } else {
-      input.value = Number.isInteger(result) ? result : result.toFixed(6);
+      input.value = Number.isInteger(result) ? result : result.toFixed(2); 
     }
 
     // Reset previous value and selected operator
