@@ -1,33 +1,3 @@
-/*///////////////////////////////////////////
-- dot operator is currently not working
-- so far, the calculator can add, subtract, multiply, and divide
-- if the result of a division is a decimal, it will be rounded to 2 decimal places
-- if the result is a decimal, it will be displayed as a integer
-
-I will add more functionality to the calculator in the future and fix this issues 
-///////////////////////////////////////////*/
-
-// calculator functions
-function add(a, b) {
-  return a + b;
-}
-
-function subtract(a, b) {
-  return a - b;
-}
-
-function multiply(a, b) {
-  return a * b;
-}
-
-function divide(a, b) {
-  return a / b;
-}
-
-function operate(a, b, operator) {
-  return operator(a, b);
-}
-
 function reset() {
   input.value = "0";
   previousValue = undefined;
@@ -41,6 +11,7 @@ let selectedOperator = false;
 let previousValue;
 const keyOperators = document.querySelector(".operators");
 const operators = ["+", "-", "*", "÷", ".", "="];
+let isNegative = false;
 
 // create number keys
 // -1 is clear and -2 is delete
@@ -72,10 +43,10 @@ for (let i in operators) {
 // add event listeners to number keys
 keyNumbers.addEventListener("click", (e) => {
   if (
-    previousValue === undefined &&
-    input.value === "0" &&
-    e.target.textContent != "0"
-    || input.value === "Error"
+    (previousValue === undefined &&
+      input.value === "0" &&
+      e.target.textContent != "0") ||
+    input.value === "Error"
   ) {
     if (e.target.classList.contains("number") || input.value === "Error") {
       // if the first input is not 0, replace it with the number
@@ -90,6 +61,7 @@ keyNumbers.addEventListener("click", (e) => {
   } else if (e.target.title === "clear") {
     // if clear is selected, clear the input
     reset();
+    input.value = "0";
   } else if (e.target.title === "delete") {
     // if delete is selected, delete the last character
     input.value = input.value.slice(0, -1);
@@ -100,65 +72,78 @@ keyNumbers.addEventListener("click", (e) => {
       input.value = "0";
     }
   }
-  console.log(input.value);
-  console.log(previousValue);
 });
 
 keyOperators.addEventListener("click", (e) => {
-  // if operator is selected, do not allow another operator to be selected
-  if (operators.includes(e.target.title) && e.target.title != "=") {
-    if (previousValue === e.target.title || selectedOperator) return;
+  const value = input.value;
+  const lastChar = value[value.length - 1];
+
+  // Handle negative numbers at the beginning
+  if (value === "0" && e.target.title === "-") {
+    input.value = "-";
+    return;
+  }
+
+  // Handle the dot operator
+  if (e.target.title === ".") {
+    if (value.includes(".")) return;
     input.value += e.target.title;
-    previousValue = e.target.title;
+    return;
+  }
+
+  // Avoid adding multiple operators
+  if (operators.includes(e.target.title) && e.target.title != "=") {
+    if (operators.includes(lastChar)) {
+      // Replace the last operator with the new operator
+      input.value = value.slice(0, -1) + e.target.title;
+      return;
+    }
+
+    // block multiple operators
+    if (selectedOperator) return;
+
+    input.value += e.target.title;
     selectedOperator = true;
   }
 
-  // if equals is selected, calculate the result
+  // Manage operation when = is clicked
   if (e.target.title === "=") {
-    let firstValue, secondValue, operator, expression;
+    // Reeplace ÷ with / for eval
+    const expression = input.value.replace(/÷/g, "/");
 
-    expression = input.value.split(/(\+|-|\*|÷)/);
-    operator = expression[1];
-    firstValue = parseInt(expression[0]);
-    secondValue = parseInt(expression[2]);
+    // Check if the expression is valid and create an array with the numbers and operators
+    const regex = /^\s*([-+]?\d*\.?\d+)\s*([-+*/])\s*([-+]?\d*\.?\d+)\s*$/;
+    const match = expression.match(regex);
 
-    let func;
-    switch (operator) {
-      case "+":
-        func = add;
-        break;
-      case "-":
-        func = subtract;
-        break;
-      case "*":
-        func = multiply;
-        break;
-      case "÷":
-        func = divide;
-        break;
-      default:
-        input.value = "Error";
-        return;
-    }
-
-    if (func === divide && secondValue === 0) {
+    if (!match) {
       input.value = "Error";
       return;
     }
 
-    let result = operate(firstValue, secondValue, func);
-    console.log(result)
-    if (result % 1 != 0) {
-      result = result.toFixed(2);
+    // destructure the expression into num1, operator, num2
+    const [_, num1, operator, num2] = match;
+    const firstValue = parseFloat(num1);
+    const secondValue = parseFloat(num2);
+
+    // map operator to function
+    const operations = {
+      "+": (a, b) => a + b,
+      "-": (a, b) => a - b,
+      "*": (a, b) => a * b,
+      "/": (a, b) => (b === 0 ? "Error" : a / b),
+    };
+
+    // Perform operation
+    const result = operations[operator](firstValue, secondValue);
+
+    // Display result
+    if (result === "Error") {
+      input.value = result;
     } else {
-      result = result.toString();
+      input.value = Number.isInteger(result) ? result : result.toFixed(6);
     }
 
-    input.value = result.toString();
-    previousValue = result.toString();
+    // Reset previous value and selected operator
     selectedOperator = false;
   }
 });
-
-// test the calculator functions in functions.spec.js
-//module.exports = { add, subtract, multiply, divide, operate };
